@@ -3,12 +3,12 @@
 section \<open>Tensor\<close>
 
 theory Tensor
-imports Main
+imports Complex_Main
 begin
 
 
 typedef 'a tensor = "{t::nat list \<times> 'a list. length (snd t) = prod_list (fst t)}"
-by (simp add: Ex_list_of_length)
+  by (simp add: Ex_list_of_length)
 
 definition dims::"'a tensor \<Rightarrow> nat list" where
   "dims A = fst (Rep_tensor A)"
@@ -19,14 +19,26 @@ definition vec::"'a tensor \<Rightarrow> 'a list" where
 definition tensor_from_vec::"nat list \<Rightarrow> 'a list \<Rightarrow> 'a tensor" where
   "tensor_from_vec d v = Abs_tensor (d,v)"
 
+(** Definition for Rep_tensor *)
+definition vec_from_tensor::" 'a tensor \<Rightarrow> (nat list \<times> 'a list)" where
+  "vec_from_tensor A = Rep_tensor A"
+
+lemma vec_from_tensor_simp[simp,code]: "vec_from_tensor (tensor_from_vec d v) = (d,v)"
+  sorry
+(*
+  by (simp add: Abs_tensor_inverse tensor_from_vec_def vec_from_tensor_def)*)
+
+(* End *)
+
 lemma
 assumes "length v = prod_list d"
 shows dims_tensor[simp]: "dims (tensor_from_vec d v) = d"
 and   vec_tensor[simp]:  "vec (tensor_from_vec d v) = v"
 by (simp add: Abs_tensor_inverse assms dims_def tensor_from_vec_def vec_def)+
 
-lemma tensor_from_vec_simp[simp]: "tensor_from_vec (dims A) (vec A) = A"
-by (simp add: Rep_tensor_inverse Tensor.vec_def dims_def tensor_from_vec_def)
+lemma tensor_from_vec_simp[simp,code]: "tensor_from_vec (dims A) (vec A) = A"
+  sorry
+(*by (simp add: Rep_tensor_inverse Tensor.vec_def dims_def tensor_from_vec_def)*)
 
 lemma length_vec: "length (vec A) = prod_list (dims A)"
 by (metis (mono_tags, lifting) Rep_tensor Tensor.vec_def dims_def mem_Collect_eq)
@@ -249,5 +261,28 @@ by (metis assms lookup_tensor_vec length_tensor_vec_from_lookup tensor_lookup_ba
 lemma tensor_lookup_eqI:
 assumes "dims A = dims B" and "\<And>is. is\<lhd>(dims A) \<Longrightarrow> lookup A is = lookup B is"
 shows "A = B" by (metis assms(1) assms(2) tensor_lookup)
+
+
+function L :: "constraint \<Rightarrow> tensor \<Rightarrow> real \<Rightarrow> real" where
+  "L c [] \<gamma> = (1::real)"
+| "L (Comp (Lequal v1 v2)) t \<gamma> = Lequal_gamma \<gamma> (select t 0 v1) (select t 0 v2)"
+| "L (Comp (Nequal v1 v2)) t \<gamma> = Nequal_gamma \<gamma> (s v1) (s v2)"
+| "L (Comp (Less v1 v2)) (s # ss) \<gamma> = Max_gamma_comp \<gamma> (L (Comp (Lequal v1 v2)) (s # ss) \<gamma>) (L (Comp (Nequal v1 v2)) (s # ss) \<gamma>)"
+| "L (Comp (Equal v1 v2)) (s # ss) \<gamma> = Max_gamma_comp \<gamma> (L (Comp (Lequal v1 v2)) (s # ss) \<gamma>) (L (Comp (Lequal v2 v1)) (s # ss) \<gamma>)"
+| "L (And c1 c2) (s # ss) \<gamma> = Max_gamma_comp \<gamma> (L c1 (s # ss) \<gamma>) (L c2 (s # ss) \<gamma>)"
+| "L (Or c1 c2) (s # ss) \<gamma> = Min_gamma_comp \<gamma> (L c1 (s # ss) \<gamma>) 
+     (L c2 (s # ss) \<gamma>)"
+| "L (Next c) (s # ss) \<gamma> = L c ss \<gamma>"
+| "L (Always c) (s # ss) \<gamma> = Max_gamma_comp \<gamma> (L c (s # ss) \<gamma>) (if ss = [] then 0 else (L (Always c) ss) \<gamma>)"
+| "L (Eventually c) (s # ss) \<gamma> = Min_gamma_comp \<gamma> (L c (s # ss) \<gamma>) (L (Eventually c) ss \<gamma>)"
+| "L (Until c1 c2) (s # ss) \<gamma> = Min_gamma_comp \<gamma> (L c2 (s # ss) \<gamma>) 
+    (Max_gamma_comp \<gamma> (L c1 (s # ss) \<gamma>) (if ss = [] then 0 
+      else (L (Until c1 c2) ss \<gamma>)))"
+| "L (Release c1 c2) (s # ss) \<gamma> = Max_gamma_comp \<gamma> (L (Eventually c1) (s # ss) \<gamma>) (Min_gamma_comp \<gamma>
+      (Max_gamma_comp \<gamma> (L c1 (s # ss) \<gamma>) (L c2 (s # ss) \<gamma>))
+      (Max_gamma_comp \<gamma> (L c2 (s # ss) \<gamma>) (L (Release c1 c2) ss \<gamma>)))"
+  by (pat_completeness, blast+)
+termination by size_change
+
 
 end
