@@ -5,7 +5,7 @@
 *)
 
 theory Tensor_Code_Gen
-imports "Complex_Main" Tensor Tensor_Subtensor
+imports "Complex_Main" "HOL-Library.Code_Target_Int" "Tensor" "Tensor_Plus"
 begin
 
 text\<open>
@@ -21,9 +21,9 @@ text\<open>
 \<close>
 
 code_printing
-  type_constructor "real tensor" \<rightharpoonup>
+  type_constructor real \<rightharpoonup>
     (SML) "real"
-    and (OCaml) "Tensor.t"
+    and (OCaml) "float"
 
 code_printing
   type_constructor int \<rightharpoonup>
@@ -54,10 +54,8 @@ code_printing
     (SML) "1"
     and (OCaml) "1"
 
-fun t :: "real tensor \<Rightarrow> nat \<Rightarrow> real tensor" where "t x i = subtensor x i"
-
 code_printing
-  constant "t :: real tensor \<Rightarrow> nat \<Rightarrow> real tensor" \<rightharpoonup>
+  constant "HOL.equal :: real \<Rightarrow> real \<Rightarrow> bool" \<rightharpoonup>
     (SML) "Real.== ((_), (_))"
     and (OCaml) "Pervasives.(=)"
 
@@ -137,14 +135,14 @@ lemma ln_eq_real_ln [code_unfold]: "ln = real_ln"
 end
 
 code_printing
-  constant Code_Real_Approx_By_Float_2.real_exp \<rightharpoonup>
+  constant Tensor_Code_Gen.real_exp \<rightharpoonup>
     (SML) "Math.exp"
     and (OCaml) "Pervasives.exp"
-declare Code_Real_Approx_By_Float_2.real_exp_def[code del]
+declare Tensor_Code_Gen.real_exp_def[code del]
 declare exp_def[code del]
 
 code_printing
-  constant Code_Real_Approx_By_Float_2.real_ln \<rightharpoonup>
+  constant Tensor_Code_Gen.real_ln \<rightharpoonup>
     (SML) "Math.ln"
     and (OCaml) "Pervasives.log"
 declare ln_real_def[code del]

@@ -19,26 +19,26 @@ definition vec::"'a tensor \<Rightarrow> 'a list" where
 definition tensor_from_vec::"nat list \<Rightarrow> 'a list \<Rightarrow> 'a tensor" where
   "tensor_from_vec d v = Abs_tensor (d,v)"
 
-(** Definition for Rep_tensor *)
-definition vec_from_tensor::" 'a tensor \<Rightarrow> (nat list \<times> 'a list)" where
-  "vec_from_tensor A = Rep_tensor A"
-
-lemma vec_from_tensor_simp[simp,code]: "vec_from_tensor (tensor_from_vec d v) = (d,v)"
-  sorry
-(*
-  by (simp add: Abs_tensor_inverse tensor_from_vec_def vec_from_tensor_def)*)
-
-(* End *)
-
+(* If the fundamental requirement holds, then the constructed tensor is valid *)
 lemma
 assumes "length v = prod_list d"
 shows dims_tensor[simp]: "dims (tensor_from_vec d v) = d"
 and   vec_tensor[simp]:  "vec (tensor_from_vec d v) = v"
 by (simp add: Abs_tensor_inverse assms dims_def tensor_from_vec_def vec_def)+
 
+(* Needed for code gen *)
 lemma tensor_from_vec_simp[simp,code]: "tensor_from_vec (dims A) (vec A) = A"
-  sorry
-(*by (simp add: Rep_tensor_inverse Tensor.vec_def dims_def tensor_from_vec_def)*)
+ by (simp add: Rep_tensor_inverse Tensor.vec_def dims_def tensor_from_vec_def)
+
+
+(** Attempted code equation for Rep_tensor *)
+
+(* I am not sure what lemma needs to be proven in order to generate a code equation for Rep_tensor*)
+
+lemma vec_from_tensor_simp[simp]:
+  "Rep_tensor (tensor_from_vec (fst A) (snd A)) = A" sorry
+
+(* End *)
 
 lemma length_vec: "length (vec A) = prod_list (dims A)"
 by (metis (mono_tags, lifting) Rep_tensor Tensor.vec_def dims_def mem_Collect_eq)
@@ -48,10 +48,11 @@ assumes "dims A = dims B" and "vec A = vec B"
 shows "A=B"
 by (metis assms tensor_from_vec_simp)
 
-
+(* 3D tensor \<Rightarrow> order 3 *)
 abbreviation order::"'a tensor \<Rightarrow> nat" where
   "order t == length (dims t)"
 
+(*  *)
 inductive valid_index::"nat list \<Rightarrow> nat list \<Rightarrow> bool" (infix "\<lhd>" 50) where
   Nil: "[] \<lhd> []" |
   Cons: "is \<lhd> ds \<Longrightarrow> i<d \<Longrightarrow> i#is \<lhd> d#ds"

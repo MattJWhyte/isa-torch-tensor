@@ -11,7 +11,9 @@ begin
 definition "vec_plus a b = map (\<lambda>(x,y). plus x y) (zip a b)"
 
 definition plus_base::"'a::semigroup_add tensor \<Rightarrow> 'a tensor \<Rightarrow> 'a tensor"
-where "plus_base A B = (tensor_from_vec (dims A) (vec_plus (vec A) (vec B)))"
+  where "plus_base A B = (tensor_from_vec (dims A) (vec_plus (vec A) (vec B)))"
+
+
 
 instantiation tensor:: (semigroup_add) plus
 begin
@@ -252,6 +254,5 @@ next
   case (Cons A As)
   then show ?case by (simp add: listsum_Cons list.set_intros listsum_dims)
 qed
-
 
 end
